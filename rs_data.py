@@ -21,7 +21,7 @@ from time import sleep
 from datetime import date
 from datetime import datetime
 
-DIR = os.path.dirname(os.path.realpath(__file__))
+DIR = os.path.dirname(os.path.realpath('rs_data.ipynb'))
 
 if not os.path.exists(os.path.join(DIR, 'data')):
     os.makedirs(os.path.join(DIR, 'data'))
@@ -110,13 +110,13 @@ def exchange_from_symbol(symbol):
     if symbol == "A":
         return "NYSE MKT"
     if symbol == "N":
-       return "NYSE"
+        return "NYSE"
     if symbol == "P":
-       return "NYSE ARCA"
+        return "NYSE ARCA"
     if symbol == "Z":
-       return "BATS"
+        return "BATS"
     if symbol == "V":
-       return "IEXG"
+        return "IEXG"
     return "n/a"
 
 def get_tickers_from_nasdaq(tickers):
@@ -203,12 +203,20 @@ def get_info_from_dict(dict, key):
 def load_ticker_info(ticker, info_dict):
     escaped_ticker = escape_ticker(ticker)
     info = yf.Ticker(escaped_ticker)
-    ticker_info = {
-        "info": {
-            "industry": get_info_from_dict(info.info, "industry"),
-            "sector": get_info_from_dict(info.info, "sector")
+    try:
+        ticker_info = {
+            "info": {
+                "industry": get_info_from_dict(info.info, "industry"),
+                "sector": get_info_from_dict(info.info, "sector")
+            }
         }
-    }
+    except Exception:
+        ticker_info = {
+            "info": {
+                "industry": "n/a",
+                "sector": "n/a"
+            }
+        }
     info_dict[ticker] = ticker_info
 
 def load_prices_from_tda(securities, api_key, info = {}):
@@ -218,9 +226,10 @@ def load_prices_from_tda(securities, api_key, info = {}):
     tickers_dict = {}
     start = time.time()
     load_times = []
-    new_entries = 0
+    #new_entries = 0
 
     for idx, sec in enumerate(securities):
+        print(new_entries)
         ticker = sec["ticker"]
         r_start = time.time()
         response = requests.get(
@@ -230,10 +239,10 @@ def load_prices_from_tda(securities, api_key, info = {}):
         )
         ticker_data = response.json()
         if not ticker in TICKER_INFO_DICT:
-            new_entries = new_entries + 1
+            #new_entries = new_entries + 1
             load_ticker_info(ticker, TICKER_INFO_DICT)
-            if new_entries % 25 == 0:
-                write_ticker_info_file(TICKER_INFO_DICT)
+            #if new_entries % 25 == 0:
+            write_ticker_info_file(TICKER_INFO_DICT)
         ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
         now = time.time()
         current_load_time = now - r_start
@@ -291,9 +300,10 @@ def load_prices_from_yahoo(securities, info = {}):
         ticker = security["ticker"]
         r_start = time.time()
         ticker_data = get_yf_data(security, start_date, today)
-        # if not ticker in TICKER_INFO_DICT:
-        #     load_ticker_info(ticker, TICKER_INFO_DICT)
-        # ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
+        if not ticker in TICKER_INFO_DICT:
+            load_ticker_info(ticker, TICKER_INFO_DICT)
+            write_ticker_info_file(TICKER_INFO_DICT)
+        ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
         now = time.time()
         current_load_time = now - r_start
         load_times.append(current_load_time)

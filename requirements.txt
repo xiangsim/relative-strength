@@ -6,4 +6,4 @@ pandas_datareader==0.10.0
 beautifulsoup4==4.12.0
 PyYAML==6.0
 yfinance==0.2.14
-openbb==2.5.1
+openbb==2.5.*

@@ -1,4 +1,4 @@
-# NOTE: This is no longer maintained. If you need it, fork it or something.
+# NOTE: Fork of Skyte's Relative Strength repository.
 ---
 
 # relative-strength

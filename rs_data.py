@@ -260,55 +260,57 @@ def load_prices_from_tda(securities, api_key, info = {}):
     write_price_history_file(tickers_dict)
 
 
-def get_yf_data(security, start_date, end_date):
-        ticker_data = {}
-        ticker = security["ticker"]
-        escaped_ticker = escape_ticker(ticker)
-        df = yf.download(escaped_ticker, start=start_date, end=end_date, auto_adjust=True)
-        yahoo_response = df.to_dict()
-        timestamps = list(yahoo_response["Open"].keys())
-        timestamps = list(map(lambda timestamp: int(timestamp.timestamp()), timestamps))
-        opens = list(yahoo_response["Open"].values())
-        closes = list(yahoo_response["Close"].values())
-        lows = list(yahoo_response["Low"].values())
-        highs = list(yahoo_response["High"].values())
-        volumes = list(yahoo_response["Volume"].values())
-        candles = []
-
-        for i in range(0, len(opens)):
-            candle = {}
-            candle["open"] = opens[i]
-            candle["close"] = closes[i]
-            candle["low"] = lows[i]
-            candle["high"] = highs[i]
-            candle["volume"] = volumes[i]
-            candle["datetime"] = timestamps[i]
-            candles.append(candle)
-
-        ticker_data["candles"] = candles
-        enrich_ticker_data(ticker_data, security)
-        return ticker_data
+def get_yf_data(security, start_date, end_date, retries=3):
+    ticker = security["ticker"]
+    escaped_ticker = escape_ticker(ticker)
+    for attempt in range(retries):
+        try:
+            df = yf.download(escaped_ticker, start=start_date, end=end_date, auto_adjust=True)
+            if not df.empty:
+                # Process df into candles as before
+                timestamps = list(df["Open"].index.map(lambda x: int(x.timestamp())))
+                opens = list(df["Open"].values)
+                closes = list(df["Close"].values)
+                lows = list(df["Low"].values)
+                highs = list(df["High"].values)
+                volumes = list(df["Volume"].values)
+                candles = [
+                    {"open": opens[i], "close": closes[i], "low": lows[i], 
+                     "high": highs[i], "volume": volumes[i], "datetime": timestamps[i]}
+                    for i in range(len(opens))
+                ]
+                ticker_data = {"candles": candles}
+                enrich_ticker_data(ticker_data, security)
+                return ticker_data
+            print(f"No data for {ticker}, attempt {attempt + 1}")
+        except Exception as e:
+            print(f"Failed to get ticker '{ticker}' reason: {e}, attempt {attempt + 1}")
+        time.sleep(2)  # Wait before retry
+    print(f"Skipping {ticker} after {retries} failed attempts")
+    return None  # Return None to skip this ticker
 
 def load_prices_from_yahoo(securities, info = {}):
     print("*** Loading Stocks from Yahoo Finance ***")
     today = date.today()
     start = time.time()
-    start_date = today - dt.timedelta(days=1*365+183) # 183 = 6 months
+    start_date = today - dt.timedelta(days=1*365+183)  # 1.5 years
     tickers_dict = {}
     load_times = []
     for idx, security in enumerate(securities):
         ticker = security["ticker"]
         r_start = time.time()
         ticker_data = get_yf_data(security, start_date, today)
-        if not ticker in TICKER_INFO_DICT:
+        if ticker_data is None:  # Skip if fetch failed
+            continue
+        if ticker not in TICKER_INFO_DICT:
             load_ticker_info(ticker, TICKER_INFO_DICT)
             write_ticker_info_file(TICKER_INFO_DICT)
         ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
         now = time.time()
         current_load_time = now - r_start
         load_times.append(current_load_time)
-        remaining_seconds = remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
-        print_data_progress(ticker, security["universe"], idx, securities, "", time.time() - start, remaining_seconds)
+        remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
+        print_data_progress(ticker, security["universe"], idx, securities, "", now - start, remaining_seconds)
         tickers_dict[ticker] = ticker_data
     write_price_history_file(tickers_dict)
 

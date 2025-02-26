@@ -38,3 +38,9 @@ jobs:
         with:
           name: rs-output
           path: output/
+      - name: Upload Debug Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-log
+          path: data_log.txt

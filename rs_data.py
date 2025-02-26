@@ -266,13 +266,13 @@ def get_yf_data(security, start_date, end_date):
         escaped_ticker = escape_ticker(ticker)
         df = yf.download(escaped_ticker, start=start_date, end=end_date, auto_adjust=True)
         yahoo_response = df.to_dict()
-        timestamps = list(yahoo_response["Open",escaped_ticker].keys())
+        timestamps = list(yahoo_response["Open"].keys())
         timestamps = list(map(lambda timestamp: int(timestamp.timestamp()), timestamps))
-        opens = list(yahoo_response["Open",escaped_ticker].values())
-        closes = list(yahoo_response["Close",escaped_ticker].values())
-        lows = list(yahoo_response["Low",escaped_ticker].values())
-        highs = list(yahoo_response["High",escaped_ticker].values())
-        volumes = list(yahoo_response["Volume",escaped_ticker].values())
+        opens = list(yahoo_response["Open"].values())
+        closes = list(yahoo_response["Close"].values())
+        lows = list(yahoo_response["Low"].values())
+        highs = list(yahoo_response["High"].values())
+        volumes = list(yahoo_response["Volume"].values())
         candles = []
 
         for i in range(0, len(opens)):

@@ -147,7 +147,7 @@ def get_tickers_from_nasdaq(tickers):
 
     return tickers
 
-SECURITIES = get_resolved_securities().values()
+SECURITIES = list(get_resolved_securities().values())[:5]
 
 def write_to_file(dict, file):
     with open(file, "w", encoding='utf8') as fp:
@@ -297,8 +297,7 @@ def load_prices_from_yahoo(securities, info={}):
     start_date = today - dt.timedelta(days=1*365+183)
     tickers_dict = {}
     load_times = []
-    # Limit to first 5 securities
-    for idx, security in enumerate(securities[:5]):
+    for idx, security in enumerate(securities):  # No [:5] here, already limited
         ticker = security["ticker"]
         print(f"Fetching {ticker}")
         r_start = time.time()
@@ -312,10 +311,10 @@ def load_prices_from_yahoo(securities, info={}):
         now = time.time()
         current_load_time = now - r_start
         load_times.append(current_load_time)
-        remaining_seconds = get_remaining_seconds(load_times, idx, len(securities[:5]))
-        print_data_progress(ticker, security["universe"], idx, securities[:5], "", now - start, remaining_seconds)
+        remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
+        print_data_progress(ticker, security["universe"], idx, securities, "", now - start, remaining_seconds)
         tickers_dict[ticker] = ticker_data
-        sleep(5)  # 5-second delay between requests
+        sleep(5)  # 5-second delay to avoid rate limits
     print(f"Writing {len(tickers_dict)} tickers to {PRICE_DATA_FILE}")
     write_price_history_file(tickers_dict)
 

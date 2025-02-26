@@ -1,46 +1,37 @@
 name: Generate RS Rankings
-
-# Triggers: Daily schedule + manual run
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Daily at midnight UTC
   workflow_dispatch:
-
 jobs:
   build:
-    runs-on: ubuntu-latest  # Ubuntu is fine for Python scripts
-
+    runs-on: ubuntu-latest
     steps:
-      # Checkout the repo
-      - uses: actions/checkout@v4  # Update to v4 for latest features
-
-      # Set up Python
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'  # Match a common version
-
-      # Install dependencies
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      # Generate RS data and rankings
-      - name: Run RS scripts
-        run: |
-          python rs_data.py || { echo "rs_data.py failed"; exit 1; }
-          python rs_ranking.py || echo "rs_ranking.py failed"
-          ls -R
-
-      # Upload the output folder
-      - name: Upload RS Output
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rs-output
-          path: output/
-      - name: Upload Debug Log
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: data-log
-          path: data_log.txt
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+    - name: Run RS scripts
+      run: |
+        echo "Running rs_data.py..."
+        python rs_data.py > data_log.txt 2>&1 || { echo "rs_data.py failed"; cat data_log.txt; exit 1; }
+        echo "Running rs_ranking.py..."
+        python rs_ranking.py > ranking_log.txt 2>&1 || { echo "rs_ranking.py failed"; cat ranking_log.txt; exit 1; }
+        ls -R > dir_list.txt
+        cat dir_list.txt
+    - name: Upload Debug Logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-logs
+        path: |
+          data_log.txt
+          ranking_log.txt
+          dir_list.txt
+    - name: Upload RS Output
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: rs-output
+        path: output/

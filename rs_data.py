@@ -69,16 +69,16 @@ REF_TICKER = {"ticker": REFERENCE_TICKER, "sector": "--- Reference ---", "indust
 
 UNKNOWN = "unknown"
 
-def get_securities(url, ticker_pos = 1, table_pos = 1, sector_offset = 1, industry_offset = 1, universe = "N/A"):
+def get_securities(url, ticker_pos = 0, table_pos = 0, sector_offset = 2, industry_offset = 3, universe = "N/A"):
     resp = requests.get(url)
     soup = bs.BeautifulSoup(resp.text, 'lxml')
-    table = soup.findAll('table', {'class': 'wikitable sortable'})[table_pos-1]
+    table = soup.findAll('table', class_=['wikitable','sortable'])[table_pos]
     secs = {}
     for row in table.findAll('tr')[table_pos:]:
         sec = {}
-        sec["ticker"] = row.findAll('td')[ticker_pos-1].text.strip()
-        sec["sector"] = row.findAll('td')[ticker_pos-1+sector_offset].text.strip()
-        sec["industry"] = row.findAll('td')[ticker_pos-1+sector_offset+industry_offset].text.strip()
+        sec["ticker"] = row.findAll('td')[ticker_pos].text.strip()
+        sec["sector"] = row.findAll('td')[sector_offset].text.strip()
+        sec["industry"] = row.findAll('td')[industry_offset].text.strip()
         sec["universe"] = universe
         secs[sec["ticker"]] = sec
     with open(os.path.join(DIR, "tmp", "tickers.pickle"), "wb") as f:

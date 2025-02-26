@@ -27,11 +27,13 @@ jobs:
       # Generate RS data and rankings
       - name: Run RS scripts
         run: |
-          python rs_data.py
-          python rs_ranking.py
+          python rs_data.py || { echo "rs_data.py failed"; exit 1; }
+          python rs_ranking.py || echo "rs_ranking.py failed"
+          ls -R
 
       # Upload the output folder
       - name: Upload RS Output
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: rs-output

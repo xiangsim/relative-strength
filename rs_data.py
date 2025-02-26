@@ -65,7 +65,7 @@ DATA_SOURCE = cfg("DATA_SOURCE")
 ALL_STOCKS = cfg("USE_ALL_LISTED_STOCKS")
 TICKER_INFO_FILE = os.path.join(DIR, "data_persist", "ticker_info.json")
 TICKER_INFO_DICT = read_json(TICKER_INFO_FILE)
-REF_TICKER = {"ticker": REFERENCE_TICKER, "sector": "--- Reference ---", "industry": "--- Reference ---", "universe": "--- Reference ---"}
+REF_TICKER = {"ticker": REFERENCE_TICKER, "sector": "ETF", "industry": "ETF", "universe": "S&P500"}
 
 UNKNOWN = "unknown"
 

@@ -261,30 +261,33 @@ def load_prices_from_tda(securities, api_key, info = {}):
 
 
 def get_yf_data(security, start_date, end_date):
-    ticker = security["ticker"]
-    escaped_ticker = escape_ticker(ticker)
-    try:
+        ticker_data = {}
+        ticker = security["ticker"]
+        escaped_ticker = escape_ticker(ticker)
         df = yf.download(escaped_ticker, start=start_date, end=end_date, auto_adjust=True)
-        if not df.empty:
-            timestamps = list(df["Open"].index.map(lambda x: int(x.timestamp())))
-            opens = list(df["Open"].values)
-            closes = list(df["Close"].values)
-            lows = list(df["Low"].values)
-            highs = list(df["High"].values)
-            volumes = list(df["Volume"].values)
-            candles = [
-                {"open": opens[i], "close": closes[i], "low": lows[i], 
-                 "high": highs[i], "volume": volumes[i], "datetime": timestamps[i]}
-                for i in range(len(opens))
-            ]
-            ticker_data = {"candles": candles}
-            enrich_ticker_data(ticker_data, security)
-            return ticker_data
-        print(f"No data for {ticker}")
-    except Exception as e:
-        print(f"Failed to get ticker '{ticker}' reason: {e}")
-    print(f"Skipping {ticker}")
-    return None
+        yahoo_response = df.to_dict()
+        timestamps = list(yahoo_response["Open",escaped_ticker].keys())
+        timestamps = list(map(lambda timestamp: int(timestamp.timestamp()), timestamps))
+        opens = list(yahoo_response["Open",escaped_ticker].values())
+        closes = list(yahoo_response["Close",escaped_ticker].values())
+        lows = list(yahoo_response["Low",escaped_ticker].values())
+        highs = list(yahoo_response["High",escaped_ticker].values())
+        volumes = list(yahoo_response["Volume",escaped_ticker].values())
+        candles = []
+
+        for i in range(0, len(opens)):
+            candle = {}
+            candle["open"] = opens[i]
+            candle["close"] = closes[i]
+            candle["low"] = lows[i]
+            candle["high"] = highs[i]
+            candle["volume"] = volumes[i]
+            candle["datetime"] = timestamps[i]
+            candles.append(candle)
+
+        ticker_data["candles"] = candles
+        enrich_ticker_data(ticker_data, security)
+        return ticker_data
 
 def load_prices_from_yahoo(securities, info = {}):
     print("*** Loading Stocks from Yahoo Finance ***")

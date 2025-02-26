@@ -288,13 +288,15 @@ def get_yf_data(security, start_date, end_date):
 
 def load_prices_from_yahoo(securities, info = {}):
     print("*** Loading Stocks from Yahoo Finance ***")
+    print(f"Number of securities to process: {len(securities)}")
     today = date.today()
     start = time.time()
-    start_date = today - dt.timedelta(days=1*365+183)  # 1.5 years
+    start_date = today - dt.timedelta(days=1*365+183)
     tickers_dict = {}
     load_times = []
     for idx, security in enumerate(securities):
         ticker = security["ticker"]
+        print(f"Fetching data for {ticker}")
         r_start = time.time()
         ticker_data = get_yf_data(security, start_date, today)
         if ticker_data is None:
@@ -309,6 +311,7 @@ def load_prices_from_yahoo(securities, info = {}):
         remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
         print_data_progress(ticker, security["universe"], idx, securities, "", now - start, remaining_seconds)
         tickers_dict[ticker] = ticker_data
+    print(f"Writing {len(tickers_dict)} tickers to {PRICE_DATA_FILE}")
     write_price_history_file(tickers_dict)
 
 def save_data(source, securities, api_key, info = {}):
@@ -319,6 +322,8 @@ def save_data(source, securities, api_key, info = {}):
 
 
 def main(forceTDA = False, api_key = API_KEY):
+    print(f"Data source: {DATA_SOURCE}")
+    print(f"Reference ticker: {REFERENCE_TICKER}")
     dataSource = DATA_SOURCE if not forceTDA else "TD_AMERITRADE"
     save_data(dataSource, SECURITIES, api_key, {"forceTDA": forceTDA})
     write_ticker_info_file(TICKER_INFO_DICT)

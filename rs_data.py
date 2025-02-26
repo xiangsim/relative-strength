@@ -60,7 +60,7 @@ def read_json(json_file):
 API_KEY = cfg("API_KEY")
 TD_API = "https://api.tdameritrade.com/v1/marketdata/%s/pricehistory"
 PRICE_DATA_FILE = os.path.join(DIR, "data", "price_history.json")
-REFERENCE_TICKER = cfg("REFERENCE_TICKER")
+REFERENCE_TICKER = "SPY"
 DATA_SOURCE = cfg("DATA_SOURCE")
 ALL_STOCKS = cfg("USE_ALL_LISTED_STOCKS")
 TICKER_INFO_FILE = os.path.join(DIR, "data_persist", "ticker_info.json")

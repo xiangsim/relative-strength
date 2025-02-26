@@ -289,27 +289,34 @@ def get_yf_data(security, start_date, end_date):
         enrich_ticker_data(ticker_data, security)
         return ticker_data
 
-def load_prices_from_yahoo(securities, info = {}):
+def load_prices_from_yahoo(securities, info={}):
     print("*** Loading Stocks from Yahoo Finance ***")
+    print(f"Processing {len(securities)} securities")
     today = date.today()
     start = time.time()
-    start_date = today - dt.timedelta(days=1*365+183) # 183 = 6 months
+    start_date = today - dt.timedelta(days=1*365+183)
     tickers_dict = {}
     load_times = []
-    for idx, security in enumerate(securities):
+    # Limit to first 5 securities
+    for idx, security in enumerate(securities[:5]):
         ticker = security["ticker"]
+        print(f"Fetching {ticker}")
         r_start = time.time()
         ticker_data = get_yf_data(security, start_date, today)
-        if not ticker in TICKER_INFO_DICT:
+        if ticker_data is None:
+            continue
+        if ticker not in TICKER_INFO_DICT:
             load_ticker_info(ticker, TICKER_INFO_DICT)
             write_ticker_info_file(TICKER_INFO_DICT)
         ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
         now = time.time()
         current_load_time = now - r_start
         load_times.append(current_load_time)
-        remaining_seconds = remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
-        print_data_progress(ticker, security["universe"], idx, securities, "", time.time() - start, remaining_seconds)
+        remaining_seconds = get_remaining_seconds(load_times, idx, len(securities[:5]))
+        print_data_progress(ticker, security["universe"], idx, securities[:5], "", now - start, remaining_seconds)
         tickers_dict[ticker] = ticker_data
+        sleep(5)  # 5-second delay between requests
+    print(f"Writing {len(tickers_dict)} tickers to {PRICE_DATA_FILE}")
     write_price_history_file(tickers_dict)
 
 def save_data(source, securities, api_key, info = {}):

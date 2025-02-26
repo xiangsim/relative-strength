@@ -72,7 +72,7 @@ UNKNOWN = "unknown"
 def get_securities(url, ticker_pos = 0, table_pos = 0, sector_offset = 2, industry_offset = 3, universe = "N/A"):
     resp = requests.get(url)
     soup = bs.BeautifulSoup(resp.text, 'lxml')
-    table = soup.findAll('table', class_=['wikitable','sortable'])[table_pos]
+    table = soup.findAll('table', class_=['wikitable', 'sortable'])[table_pos]
     secs = {}
     for row in table.findAll('tr')[table_pos:]:
         sec = {}
@@ -291,43 +291,38 @@ def get_yf_data(security, start_date, end_date):
 
 def load_prices_from_yahoo(securities, info = {}):
     print("*** Loading Stocks from Yahoo Finance ***")
-    print(f"Processing {len(securities)} securities")
     today = date.today()
     start = time.time()
-    start_date = today - dt.timedelta(days=1*365+183)
+    start_date = today - dt.timedelta(days=1*365+183) # 183 = 6 months
     tickers_dict = {}
     load_times = []
     for idx, security in enumerate(securities):
         ticker = security["ticker"]
-        print(f"Fetching {ticker}")
         r_start = time.time()
         ticker_data = get_yf_data(security, start_date, today)
-        if ticker_data is None:
-            continue
-        if ticker not in TICKER_INFO_DICT:
+        if not ticker in TICKER_INFO_DICT:
             load_ticker_info(ticker, TICKER_INFO_DICT)
             write_ticker_info_file(TICKER_INFO_DICT)
         ticker_data["industry"] = TICKER_INFO_DICT[ticker]["info"]["industry"]
         now = time.time()
         current_load_time = now - r_start
         load_times.append(current_load_time)
-        remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
-        print_data_progress(ticker, security["universe"], idx, securities, "", now - start, remaining_seconds)
+        remaining_seconds = remaining_seconds = get_remaining_seconds(load_times, idx, len(securities))
+        print_data_progress(ticker, security["universe"], idx, securities, "", time.time() - start, remaining_seconds)
         tickers_dict[ticker] = ticker_data
-    print(f"Writing {len(tickers_dict)} tickers to {PRICE_DATA_FILE}")
     write_price_history_file(tickers_dict)
 
 def save_data(source, securities, api_key, info = {}):
-    print(f"save_data called with source: {source}, securities count: {len(securities)}")
     if source == "YAHOO":
         load_prices_from_yahoo(securities, info)
     elif source == "TD_AMERITRADE":
         load_prices_from_tda(securities, api_key, info)
-    else:
-        print("No valid data source specified")
+
 
 def main(forceTDA = False, api_key = API_KEY):
-    print(f"Starting main with DATA_SOURCE: {DATA_SOURCE}, SECURITIES count: {len(SECURITIES)}")
     dataSource = DATA_SOURCE if not forceTDA else "TD_AMERITRADE"
     save_data(dataSource, SECURITIES, api_key, {"forceTDA": forceTDA})
     write_ticker_info_file(TICKER_INFO_DICT)
+
+if __name__ == "__main__":
+    main()

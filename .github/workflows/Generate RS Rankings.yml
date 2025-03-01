@@ -16,6 +16,8 @@ jobs:
       run: |
         echo "Running rs_data.py..."
         python rs_data.py > data_log.txt 2>&1 || { echo "rs_data.py failed"; cat data_log.txt; exit 1; }
+        echo "Contents of price_history.json:"
+        cat data/price_history.json >> data_log.txt 2>&1 || echo "price_history.json not found"
         echo "Running rs_ranking.py..."
         python rs_ranking.py > ranking_log.txt 2>&1 || { echo "rs_ranking.py failed"; cat ranking_log.txt; exit 1; }
         ls -R > dir_list.txt
@@ -29,6 +31,12 @@ jobs:
           data_log.txt
           ranking_log.txt
           dir_list.txt
+    - name: Upload Data Output
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: data-output
+        path: data/price_history.json
     - name: Upload RS Output
       if: success()
       uses: actions/upload-artifact@v4
